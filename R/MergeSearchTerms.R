@@ -1,0 +1,45 @@
+#' Merging of two tables containing search terms to expand search term database for the AnnotationBust function.
+#' @param ... the data frames of search terms you want to combine into a single data frame The Data frame(s) should have stringsAsFactors=FALSE listed if you want to sort them.
+#' @param SortGenes Should the final data frame be sorted by gene name? Default is FALSE.
+#' @return A new merged data frame with all the search terms combined from the lists supplied. If sort.gene=TRUE, genes will be sorted by name.
+#' @description 
+#' This function merges two data frames with search terms. This allows users to easily add search terms to data frames (either their
+#' own or ones included in this package using data() as GenBank annotations for the same genes may vary in gene name. 
+#' @examples
+#' #load the list of search terms for mitochondrial genes
+#' data(mtDNAterms) 
+#' 
+#' #Make a data.frame of new terms to add.
+#' #This is a dummy example for a non-real annoation of COI, but lets pretend it is real.
+#' add.name<-data.frame("COI","CDS", "CX1")
+#' 
+#' # make the column names the same for combination.
+#' colnames(add.name)<-colnames(mtDNAterms)
+#' 
+#' #Run the merge search term function without sorting based on gene name.
+#' new.terms<-MergeSearchTerms(add.name, mtDNAterms, SortGenes=FALSE)
+#' 
+#' #Run the merge search term function with sorting based on gene name.
+#' new.terms<-MergeSearchTerms(add.name, mtDNAterms, SortGenes=TRUE)
+#' @export
+
+MergeSearchTerms<-function(..., SortGenes=FALSE){
+  dots <- list(...)
+  for (i in sequence(length(dots))) {
+    working <- TRUE
+    if(class(dots[[i]])!="data.frame") {
+      stop(paste("The input object is the wrong format", sep=""))
+      #working <- FALSE
+    }
+    if(dim(dots[[i]])[2]!=3) {
+      stop(paste("The input object is the wrong dimensions", sep=""))
+      #working <- FALSE
+    }
+  }
+  new.terms <- rbind(...)
+  if(SortGenes==TRUE) {
+    new.terms <- new.terms[order(new.terms$Locus),]
+  }
+  row.names(new.terms)<-1:dim(new.terms)[[1]]
+  return(new.terms)
+}
