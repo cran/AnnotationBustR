@@ -36,7 +36,8 @@ dev_mode(on=T)
 install_github("sborstein/AnnotationBustR")  # install the package from GitHub
 library(AnnotationBustR)# load the package
 
-#3. Leave developers mode after using the development version of 'AnnotationBustR' so it will not #remain on your system permanently.
+#3. Leave developers mode after using the development version of 'AnnotationBustR' so it will not remain on 
+#your system permanently.
 dev_mode(on=F)
 ```
 # 3: Using AnnotationBustR
@@ -47,7 +48,7 @@ library(AnnotationBustR)
 It is important to note that most of the functions within AnnotationBustR connect to sequence databases and require an internet connection.
 
 ##3.0: AnnotationBustR Work Flow
-Before we begin a tutorial on how to use AnnotationBustR to extract sequences, lets first discuss the basic workflow of the functions in the package (Fig. 1). The orange box represents the step that occur outside of using AnnotationBustR. The only step you must do outside of AnnotationBustR is obtain a target list of accession numbers. This can be done either by downloading the accession numbers themselves from GenBank (http://www.ncbi.nlm.nih.gov/nuccore) or using R packages like `ape`, `seqinr` and `rentrez` to find accessions of interest in R. All boxes in blue in the graphic below represent steps that occur using AnnotationBustR. Boxes in green represent steps that are not mandatory, but may prove to be useful features of AnnotationBustR. In this tutorial, we will go through the steps in order, including the optional steps to show how to fully use the AnnotationBustR package.
+Before we begin a tutorial on how to use AnnotationBustR to extract sequences, lets first discuss the basic workflow of the functions in the package (Fig. 1). The orange box represents the step that occur outside of using AnnotationBustR. The only step you must do outside of AnnotationBustR is obtain a target list of accession numbers. This can be done either by downloading the accession numbers themselves from GenBank (https://www.ncbi.nlm.nih.gov/nuccore) or using R packages like `ape`, `seqinr` and `rentrez` to find accessions of interest in R. All boxes in blue in the graphic below represent steps that occur using AnnotationBustR. Boxes in green represent steps that are not mandatory, but may prove to be useful features of AnnotationBustR. In this tutorial, we will go through the steps in order, including the optional steps to show how to fully use the AnnotationBustR package.
 
 
 ```{r, out.width = "100%", echo=FALSE,fig.align='left',fig.cap= "Fig. 1: AnnotationBustR Workflow. Steps in orange occur outside the package while steps in blue are core parts of AnnotationBustR and steps in green represent optional steps"}
@@ -74,10 +75,23 @@ We can see that this returned 51 sequences. Many of these are accessions for a s
 demo.search <- esearch(term = "Barbonymus[orgn] and complete genome[title]", db = 'nuccore')#search
 accessions<-efetch(demo.search, rettype = "acc",retmode = "text")#fetch accessions
 accessions <- strsplit(content(accessions), "\n")[[1]]#split out accessions from other meta-data
-#Currently, ACNUC, which AnnotationBustR uses through the seqinr dependency, doesn't have access to refseq accessions, so remove them
+#Currently, ACNUC, which AnnotationBustR uses through the seqinr dependency, doesn't have access to refseq 
+#accessions, so remove them
 accessions<-accessions[-grep("NC_",accessions)]
 ```
 We can see that this returns six complete mitochondrial genome sequences on GenBank for *Barbonymus* species. We'll be using these accessions later in this tutorial.
+
+One important note for using `reutils` for finding sequences is that if you are trying to retrieve over 500 accession numbers, you will get a warning that you need to write it to a file locally on the machine. In this case, you can use the folowing code below. As the file is local and not stored in R, you will need to read it back into R for use with AnnotationBustR. Luckily, this doesn't write meta-data to the file, so we don't have to run the line stripping the meta-data.
+
+```
+#Perform search given critera
+demo.search.long <- esearch(term = "Pristimantis[orgn] and 12S[title]", db = 'nuccore', usehistory = TRUE) 
+#As more than 500 records, write the records to file in the current working directory
+accessions.long<-efetch(demo.search.long, rettype = "acc",retmode  = "text", outfile = "12S.txt")
+#Read in file with records, you can now use these in AnnotationBustR
+accessions.long.table <- read.table("12S.txt",header = FALSE,stringsAsFactors = FALSE) 
+accessions.long.accessions <- accessions.long.table$V1
+```
 
 ## 3.1:(Optional Step) Finding the Longest Available
 AnnotationBustR's `FindLongestSeq` function finds the longest available sequence for each species in a given set of GenBank accession numbers. All the user needs is to obtain a list of GenBank accession numbers they would like to input. The only function argument for `FindLongestSeq` is `Accessions`, which takes a vector of accession numbers as input. We can run the function below on the six Barbonymus accessions we found above by:
@@ -135,7 +149,8 @@ While we have tried to cover as many synonyms for genes in our pre-made data fra
 For example, let's imagine that we found a completely new annotation for the gene cytochrome oxidase subunit 1 (COI) listed as CX1. The `MergeSearchTerms` function only has two arguments, `...`, which takes two or more objects of class `data.frame` and  the logical `Sort.Genes`, which We could easily add this to other mitochondrial gene terms by:
 
 ```
-add.name<-data.frame("COI","CDS", "CX1", stringsAsFactors = FALSE)#Add imaginary gene synonym for cytochrome oxidase subunit 1, CX1
+#Add imaginary gene synonym for cytochrome oxidase subunit 1, CX1
+add.name<-data.frame("COI","CDS", "CX1", stringsAsFactors = FALSE)
 colnames(add.name)<-colnames(mtDNAterms)#make the columnames for this synonym those needed for AnnotationBustR
 
 #Run the merge search term function without sorting based on gene name.
@@ -151,7 +166,7 @@ The main function of AnnotationBustR is `AnnotationBust`. This function extracts
 
 Additional arguments include the ability to specify duplicate genes you wish to recover as a vector of gene names using the `Duplicates` argument and specifying the number of duplicate instances to extract using a numeric vector (which must be the same length as `Duplicates`) using the `DuplicateInstances` argument.
 
-AnnotationBustR also has arguments to translate coding sequences into the corresponding peptide sequence setting the `TranslateSeqs` argument to TRUE. If `TranslateSeqs=TRUE`, users should also specify the GenBank translation code number corresponding to their sequences using the `TranslateCode` argument. A list of GenBank translaton codes for taxa is available here: http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
+AnnotationBustR also has arguments to translate coding sequences into the corresponding peptide sequence setting the `TranslateSeqs` argument to TRUE. If `TranslateSeqs=TRUE`, users should also specify the GenBank translation code number corresponding to their sequences using the `TranslateCode` argument. A list of GenBank translaton codes for taxa is available here: https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
 
 An additional argument of `AnnotationBust` is `DuplicateSpecies` which when set to `DuplicateSpecies=TRUE` adds the accession number to the species name for the FASTA file. This can be useful for later analyses involving FASTA files as duplicate names in FASTA headers can pose problems with some programs. It is important to note that if users select `DuplicateSpecies=TRUE` that while FASTA file will contain species names with their respected accession number, the corresponding accession table will either have a single row per species containing all the accession numbers for each subsequence locus found for that species seperated by a comma or a seperate row for each accession number dependent on what the user chooses for the `TidyAccessions` argument (see description below).
 
@@ -159,7 +174,7 @@ The argument `Prefix`can either be `NULL` or a character vector of length 1. If 
 
 The final argument `TidyAccessions` effects the format of the final accession table. If `TidyAccessions=TRUE`, all sequence for a single species will be collapsed into a single cell per locus and accessions will be seperated by commas. If `TidyAccessions=FALSE` it will leave each accession number in its own row in the accession table. 
 
-For the tutorial, we will use the accessions we created in examples 3.1 in the object `my.longest.accessions`. This is a vector that contains three accessions for mitogenomes of three species of *Barbonymus*. These accessions provide a good highlight as to the utility of this package.If we look at the annotations of these three accessions(https://www.ncbi.nlm.nih.gov/nuccore/AP011317.1,https://www.ncbi.nlm.nih.gov/nuccore/AP011181.1,https://www.ncbi.nlm.nih.gov/nuccore/AB238966.1), we can see that while AP011317 and AP011181 are annotated with similar nomenclature, AB238966 differs substantially (e.x. COI vs CO2, Cyt b vs Cb, etc.). For this example, we will use all the arguments of `AnnotationBust` to extract all 38 subsequences for the four accessions (22 tRNAs, 13 CDS, 2 rRNAs, and 1 D-loop). For this we will have to specify duplicates, in this case for tRNA-Leu and tRNA-Ser, which occur twice in vertebrate mitogenomes. We will translate the CDS using `TranslateSeqs` argument with `TranslateCode=2`, the code for vertebrate mitogenomes. Because we have a single accession for each species, we will specify `DuplicateSpecies=FALSE` and have out FASTA files output with the prefix "Demo" by specifying `Prefix="Demo"` and with `TiddyAccessions=TRUE`. This will create 38 FASTA files for all mitochondrial loci in the mitochondrial genome in the working director with the prefix "Demo".
+For the tutorial, we will use the accessions we created in examples 3.1 in the object `my.longest.accessions`. This is a vector that contains three accessions for mitogenomes of three species of *Barbonymus*. These accessions provide a good highlight as to the utility of this package.If we look at the annotations of these three accessions(https://www.ncbi.nlm.nih.gov/nuccore/AP011317.1, https://www.ncbi.nlm.nih.gov/nuccore/AP011181.1, https://www.ncbi.nlm.nih.gov/nuccore/AB238966.1), we can see that while AP011317 and AP011181 are annotated with similar nomenclature, AB238966 differs substantially (e.x. COI vs CO2, Cyt b vs Cb, etc.). For this example, we will use all the arguments of `AnnotationBust` to extract all 38 subsequences for the four accessions (22 tRNAs, 13 CDS, 2 rRNAs, and 1 D-loop). For this we will have to specify duplicates, in this case for tRNA-Leu and tRNA-Ser, which occur twice in vertebrate mitogenomes. We will translate the CDS using `TranslateSeqs` argument with `TranslateCode=2`, the code for vertebrate mitogenomes. Because we have a single accession for each species, we will specify `DuplicateSpecies=FALSE` and have out FASTA files output with the prefix "Demo" by specifying `Prefix="Demo"` and with `TiddyAccessions=TRUE`. This will create 38 FASTA files for all mitochondrial loci in the mitochondrial genome in the working director with the prefix "Demo".
 
 ```
 #run AnnotationBust function for two duplicate tRNA genes occuring twice and translate CDS
@@ -217,4 +232,4 @@ ACNUC.GB.INFO#return info on date
 It is also important to note that refseq numbers are not supported at the moment (i.e. prefixes like XM_ and NC_). This is due to a limitation in our dependency `seqinr`, which only provides access to refseq viruses at present. We have been in contact with the maintainers of `seqinr` and look forward to implementing refseq accessability into AnotationBusR in the future.
 
 ## 4: Final Comments
-Further information on the functions and their usage can be found in the helpfiles `help(package=AnnotationBustR)`. For any further issues and questions send an email with subject 'AnnotationBustR support' to sborstei@vols.utk.edu or post to the issues section on GitHub(https://github.com/sborstein/AnnotationBustR/issues).
+Further information on the functions and their usage can be found in the helpfiles `help(package=AnnotationBustR)`. For any further issues and questions send an email with subject 'AnnotationBustR support' to borstein@umich.edu or post to the issues section on GitHub(https://github.com/sborstein/AnnotationBustR/issues).
